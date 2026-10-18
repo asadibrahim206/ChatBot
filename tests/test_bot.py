@@ -30,3 +30,14 @@ def test_two_keywords_get_both_replies():
     reply = get_reply("Hello, how are you?")
     assert "Hi there! How can I help you?" in reply
     assert "I'm just code, but I'm running great!" in reply
+
+def test_bot_remembers_last_user_message():
+    history = [
+        {"role": "user", "text": "hello"},
+        {"role": "bot", "text": "Hi there! How can I help you?"},
+    ]
+    assert get_reply("What did I say?", history) == 'You said: "hello"'
+
+
+def test_bot_with_no_history_says_nothing_yet():
+    assert get_reply("what did I say?") == "You haven't said anything yet."
