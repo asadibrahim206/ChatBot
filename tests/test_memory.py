@@ -20,3 +20,13 @@ def test_sessions_are_kept_separate():
     store = ConversationStore()
     store.add_message("abc", "user", "hello")
     assert store.get_history("xyz") == []
+
+
+def test_history_survives_a_new_store(tmp_path):
+    db_file = str(tmp_path / "test.db")
+
+    first = ConversationStore(db_file)
+    first.add_message("abc", "user", "hello")
+
+    second = ConversationStore(db_file)
+    assert second.get_history("abc") == [{"role": "user", "text": "hello"}]

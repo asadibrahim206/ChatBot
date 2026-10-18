@@ -81,12 +81,3 @@ def test_chat_page_talks_to_the_api():
     html = client.get("/ui").text
     assert 'fetch("/chat"' in html
     assert "session_id" in html
-
-def test_history_survives_a_new_store(tmp_path):
-    db_file = str(tmp_path / "test.db")
-
-    first = ConversationStore(db_file)
-    first.add_message("abc", "user", "hello")
-
-    second = ConversationStore(db_file)
-    assert second.get_history("abc") == [{"role": "user", "text": "hello"}]

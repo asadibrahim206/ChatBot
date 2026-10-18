@@ -8,9 +8,10 @@ from chatbot.memory import ConversationStore
 from chatbot.schemas import ChatRequest, ChatResponse
 from pathlib import Path
 from fastapi.responses import FileResponse
+from chatbot.config import get_db_path
 
 app = FastAPI(title="Chatbot API")
-store = ConversationStore()
+store = ConversationStore(get_db_path())
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -37,10 +38,6 @@ def read_history(session_id: str):
         messages=store.get_history(session_id),
     )
 
-def test_chat_page_is_served():
-    response = client.get("/ui")
-    assert response.status_code == 200
-    assert "text/html" in response.headers["content-type"]
 
 @app.get("/ui", include_in_schema=False)
 def chat_page():
