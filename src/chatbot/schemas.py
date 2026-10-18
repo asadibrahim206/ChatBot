@@ -9,3 +9,12 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     session_id: str
+
+class Message(BaseModel):
+    role: str
+    text: str
+
+
+class HistoryResponse(BaseModel):
+    session_id: str
+    messages: list[Message]

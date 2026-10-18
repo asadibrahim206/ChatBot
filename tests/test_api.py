@@ -57,3 +57,36 @@ def test_history_of_unknown_session_is_empty():
     response = client.get("/history/nobody")
     assert response.status_code == 200
     assert response.json() == {"session_id": "nobody", "messages": []}
+
+def test_chat_uses_history():
+    client.post("/chat", json={"message": "hello", "session_id": "memory-use"})
+    response = client.post(
+        "/chat", json={"message": "what did I say?", "session_id": "memory-use"}
+    )
+    assert response.json()["reply"] == 'You said: "hello"'
+
+
+def test_chat_page_is_served():
+    response = client.get("/ui")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+def test_chat_page_has_input_and_send_button():
+    html = client.get("/ui").text
+    assert 'id="messages"' in html
+    assert 'id="message-input"' in html
+    assert 'id="send-button"' in html
+
+def test_chat_page_talks_to_the_api():
+    html = client.get("/ui").text
+    assert 'fetch("/chat"' in html
+    assert "session_id" in html
+
+def test_history_survives_a_new_store(tmp_path):
+    db_file = str(tmp_path / "test.db")
+
+    first = ConversationStore(db_file)
+    first.add_message("abc", "user", "hello")
+
+    second = ConversationStore(db_file)
+    assert second.get_history("abc") == [{"role": "user", "text": "hello"}]
