@@ -1,15 +1,24 @@
 from types import SimpleNamespace
+
 import pytest
-from chatbot.llm import LLMError, ask_llm
+
+from chatbot.errors import (
+    LLMConfigurationError,
+    LLMError,
+    LLMRateLimitError,
+    LLMUnavailableError,
+)
 from chatbot.llm import ask_llm
 
 
 class FakeModels:
     def __init__(self):
         self.calls = []
+        self.last_config = None
 
-    def generate_content(self, model, contents):
+    def generate_content(self, model, contents, config=None):
         self.calls.append({"model": model, "contents": contents})
+        self.last_config = config
         return SimpleNamespace(text="fake answer")
 
 
@@ -33,6 +42,7 @@ def test_ask_llm_sends_the_prompt_and_model():
         }
     ]
 
+
 def test_history_is_sent_before_the_new_message():
     client = FakeClient()
     history = [
@@ -46,15 +56,6 @@ def test_history_is_sent_before_the_new_message():
         {"role": "user", "parts": [{"text": "what's up"}]},
     ]
 
-class FakeModels:
-    def __init__(self):
-        self.calls = []
-        self.last_config = None
-
-    def generate_content(self, model, contents, config=None):
-        self.calls.append({"model": model, "contents": contents})
-        self.last_config = config
-        return SimpleNamespace(text="fake answer")
 
 def test_system_prompt_is_sent_as_instruction():
     client = FakeClient()
@@ -66,6 +67,7 @@ def test_no_system_prompt_sends_no_config():
     client = FakeClient()
     ask_llm("hi", client, "some-model")
     assert client.models.last_config is None
+
 
 class BrokenModels:
     def generate_content(self, model, contents, config=None):
@@ -86,4 +88,42 @@ def test_ask_llm_wraps_client_errors():
 def test_ask_llm_rejects_empty_replies():
     client = SimpleNamespace(models=EmptyModels())
     with pytest.raises(LLMError):
+        ask_llm("hi", client, "some-model")
+
+
+class FakeAPIError(Exception):
+    def __init__(self, code, message=""):
+        super().__init__(f"{code} {message}")
+        self.code = code
+        self.message = message
+
+
+class RaisingModels:
+    def __init__(self, error):
+        self.error = error
+
+    def generate_content(self, model, contents, config=None):
+        raise self.error
+
+
+@pytest.mark.parametrize(
+    "error, expected",
+    [
+        (FakeAPIError(429), LLMRateLimitError),
+        (FakeAPIError(401), LLMConfigurationError),
+        (FakeAPIError(403), LLMConfigurationError),
+        (FakeAPIError(404), LLMConfigurationError),
+        (
+            FakeAPIError(400, "API key not valid. Please pass a valid API key."),
+            LLMConfigurationError,
+        ),
+        (FakeAPIError(500), LLMUnavailableError),
+        (FakeAPIError(503), LLMUnavailableError),
+        (TimeoutError("too slow"), LLMUnavailableError),
+        (RuntimeError("boom"), LLMUnavailableError),
+    ],
+)
+def test_provider_errors_are_translated(error, expected):
+    client = SimpleNamespace(models=RaisingModels(error))
+    with pytest.raises(expected):
         ask_llm("hi", client, "some-model")
