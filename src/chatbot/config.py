@@ -1,5 +1,7 @@
-import os
 
+import os
+def get_api_key() -> str | None:
+    return os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 
 def get_db_path() -> str:
     return os.getenv("CHATBOT_DB", "chatbot.db")

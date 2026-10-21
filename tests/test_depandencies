@@ -1,0 +1,13 @@
+from chatbot.dependencies import get_reply_service
+from chatbot.services import LLMReplyService, RulesReplyService
+
+
+def test_rules_brain_gives_the_rules_service(monkeypatch):
+    monkeypatch.setenv("CHATBOT_BRAIN", "rules")
+    assert isinstance(get_reply_service(), RulesReplyService)
+
+
+def test_llm_brain_gives_the_llm_service(monkeypatch):
+    monkeypatch.setenv("CHATBOT_BRAIN", "llm")
+    monkeypatch.setattr("chatbot.dependencies.make_client", lambda: object())
+    assert isinstance(get_reply_service(), LLMReplyService)

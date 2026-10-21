@@ -1,8 +1,16 @@
-ROLE_MAP = {"user": "user", "bot": "model"}
-class LLMError(Exception):
-    """Raised when the LLM call fails or returns nothing."""
+from chatbot.errors import (
+    LLMConfigurationError,
+    LLMError,
+    LLMRateLimitError,
+    LLMUnavailableError,
+)
 
-def build_contents(user_input: str, history: list[dict[str, str]] | None = None) -> list[dict]:
+ROLE_MAP = {"user": "user", "bot": "model"}
+
+
+def build_contents(
+    user_input: str, history: list[dict[str, str]] | None = None
+) -> list[dict]:
     contents = []
     for message in history or []:
         contents.append(
@@ -10,6 +18,17 @@ def build_contents(user_input: str, history: list[dict[str, str]] | None = None)
         )
     contents.append({"role": "user", "parts": [{"text": user_input}]})
     return contents
+
+
+def classify_error(exc: Exception) -> LLMError:
+    code = getattr(exc, "code", None)
+    message = str(getattr(exc, "message", "") or "").lower()
+
+    if code == 429:
+        return LLMRateLimitError()
+    if code in (401, 403, 404) or (code == 400 and "api key" in message):
+        return LLMConfigurationError()
+    return LLMUnavailableError()
 
 
 def ask_llm(
@@ -28,10 +47,8 @@ def ask_llm(
             config=config,
         )
     except Exception as exc:
-        raise LLMError("The LLM request failed.") from exc
+        raise classify_error(exc) from exc
 
     if not response.text:
-        raise LLMError("The LLM returned an empty reply.")
+        raise LLMUnavailableError()
     return response.text
-
-
