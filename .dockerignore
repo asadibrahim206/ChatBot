@@ -1,0 +1,22 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Git and local Python environments
+.git
+.venv
+venv
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local databases should not be copied into the image
+*.db
+*.sqlite
+*.sqlite3
+
+# Build/test output
+build/
+dist/
+*.egg-info/
