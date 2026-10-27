@@ -3,13 +3,17 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from chatbot.config import get_api_key, get_brain_name, get_db_path, get_model
+from chatbot.config import (
+    get_api_key,
+    get_brain_name,
+    get_database_url,
+    get_db_path,
+    get_model,
+)
 from chatbot.errors import LLMConfigurationError
-from chatbot.memory import ConversationStore
+from chatbot.memory import ConversationStore, HistoryStore
+from chatbot.postgres_store import PostgresConversationStore
 from chatbot.services import LLMReplyService, ReplyService, RulesReplyService
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 @cache
@@ -23,8 +27,17 @@ def make_client():
 
 
 @cache
-def get_store() -> ConversationStore:
+def get_store() -> HistoryStore:
+    database_url = get_database_url()
+    if database_url:
+        return PostgresConversationStore(database_url)
     return ConversationStore(get_db_path())
+
+
+def close_store() -> None:
+    if get_store.cache_info().currsize:
+        get_store().close()
+        get_store.cache_clear()
 
 
 def get_reply_service() -> ReplyService:
@@ -34,4 +47,4 @@ def get_reply_service() -> ReplyService:
 
 
 ReplyServiceDep = Annotated[ReplyService, Depends(get_reply_service)]
-StoreDep = Annotated[ConversationStore, Depends(get_store)]
+StoreDep = Annotated[HistoryStore, Depends(get_store)]

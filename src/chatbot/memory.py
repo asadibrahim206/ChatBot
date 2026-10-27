@@ -1,5 +1,15 @@
 import sqlite3
 import threading
+from typing import Protocol
+
+
+class HistoryStore(Protocol):
+    def add_message(self, session_id: str, role: str, text: str) -> None: ...
+
+    def get_history(self, session_id: str) -> list[dict[str, str]]: ...
+
+    def close(self) -> None: ...
+
 
 class ConversationStore:
     def __init__(self, db_path: str = ":memory:"):
@@ -33,3 +43,6 @@ class ConversationStore:
             ).fetchall()
         return [{"role": role, "text": text} for role, text in rows]
 
+    def close(self) -> None:
+        with self._lock:
+            self._connection.close()
