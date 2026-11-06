@@ -27,3 +27,15 @@ def get_api_key() -> str | None:
 
 def get_database_url() -> str | None:
     return os.getenv("DATABASE_URL")
+
+def to_sqlalchemy_url(url: str) -> str:
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url.removeprefix("postgresql://")
+    return url
+
+def get_jwt_secret() -> str | None:
+    return os.getenv("JWT_SECRET")
+
+
+def get_token_minutes() -> int:
+    return int(os.getenv("ACCESS_TOKEN_MINUTES", "30"))

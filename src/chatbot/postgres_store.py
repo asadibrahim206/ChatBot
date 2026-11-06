@@ -1,19 +1,5 @@
 from psycopg_pool import ConnectionPool
 
-CREATE_TABLE = """
-CREATE TABLE IF NOT EXISTS messages (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    session_id TEXT NOT NULL,
-    role TEXT NOT NULL,
-    text TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-)
-"""
-
-CREATE_INDEX = """
-CREATE INDEX IF NOT EXISTS messages_session_idx ON messages (session_id, id)
-"""
-
 
 class PostgresConversationStore:
     def __init__(self, database_url: str, max_connections: int = 5):
@@ -24,9 +10,6 @@ class PostgresConversationStore:
             open=True,
         )
         self._pool.wait(timeout=10)
-        with self._pool.connection() as connection:
-            connection.execute(CREATE_TABLE)
-            connection.execute(CREATE_INDEX)
 
     def add_message(self, session_id: str, role: str, text: str) -> None:
         with self._pool.connection() as connection:

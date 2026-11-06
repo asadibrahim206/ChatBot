@@ -30,3 +30,12 @@ def test_env_example_database_host_is_not_localhost():
     text = (ROOT / ".env.example").read_text()
     assert "@127.0.0.1:" in text
     assert "@localhost:" not in text
+
+
+def test_env_example_lists_the_jwt_secret_with_a_placeholder():
+    text = (ROOT / ".env.example").read_text()
+    names_the_secret = "JWT_SECRET=" in text
+    has_placeholder = "change-me" in text
+
+    assert names_the_secret
+    assert has_placeholder, "put a placeholder in .env.example, never a real secret"

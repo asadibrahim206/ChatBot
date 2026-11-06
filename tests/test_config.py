@@ -1,13 +1,15 @@
 import os
 
-
 from chatbot.config import (
     get_api_key,
     get_brain_name,
     get_database_url,
     get_db_path,
+    get_jwt_secret,
     get_model,
+    get_token_minutes,
     load_env,
+    to_sqlalchemy_url,
 )
 
 def test_db_path_has_a_default(monkeypatch):
@@ -88,3 +90,32 @@ def test_database_url_comes_from_environment(monkeypatch):
 def test_database_url_is_none_when_unset(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     assert get_database_url() is None
+
+def test_plain_postgres_url_gets_the_psycopg_driver():
+    url = "postgresql://u:p@127.0.0.1:5433/db"
+    assert to_sqlalchemy_url(url) == "postgresql+psycopg://u:p@127.0.0.1:5433/db"
+
+
+def test_url_that_names_a_driver_is_left_alone():
+    url = "postgresql+psycopg://u:p@127.0.0.1:5433/db"
+    assert to_sqlalchemy_url(url) == url
+
+
+def test_jwt_secret_comes_from_environment(monkeypatch):
+    monkeypatch.setenv("JWT_SECRET", "fake-secret-for-tests")
+    assert get_jwt_secret() == "fake-secret-for-tests"
+
+
+def test_jwt_secret_is_none_when_unset(monkeypatch):
+    monkeypatch.delenv("JWT_SECRET", raising=False)
+    assert get_jwt_secret() is None
+
+
+def test_token_minutes_defaults_to_30(monkeypatch):
+    monkeypatch.delenv("ACCESS_TOKEN_MINUTES", raising=False)
+    assert get_token_minutes() == 30
+
+
+def test_token_minutes_comes_from_environment(monkeypatch):
+    monkeypatch.setenv("ACCESS_TOKEN_MINUTES", "5")
+    assert get_token_minutes() == 5
