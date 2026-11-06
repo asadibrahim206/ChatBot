@@ -173,3 +173,23 @@ def test_missing_api_key_gives_configuration_error_json(monkeypatch):
     assert body["code"] == "llm_misconfigured"
     assert body["request_id"] == response.headers["x-request-id"]
     assert get_store().get_history("no-key") == []
+
+def test_app_loads_the_env_file_on_startup(monkeypatch):
+    calls = []
+    monkeypatch.setattr("chatbot.main.load_env", lambda: calls.append("loaded"))
+
+    with TestClient(app):
+        pass
+
+    assert calls == ["loaded"]
+
+
+def test_app_closes_the_store_on_shutdown(monkeypatch):
+    calls = []
+    monkeypatch.setattr("chatbot.main.load_env", lambda: None)
+    monkeypatch.setattr("chatbot.main.close_store", lambda: calls.append("closed"))
+
+    with TestClient(app):
+        pass
+
+    assert calls == ["closed"]

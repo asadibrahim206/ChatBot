@@ -34,3 +34,27 @@ class LLMConfigurationError(LLMError):
     status_code = 500
     code = "llm_misconfigured"
     message = "The chatbot service is not configured correctly."
+
+
+class EmailAlreadyRegisteredError(AppError):
+    status_code = 409
+    code = "email_already_registered"
+    message = "An account with this email already exists."
+
+
+class NotAuthenticatedError(AppError):
+    status_code = 401
+    code = "not_authenticated"
+    message = "Please sign in to continue."
+
+
+class InvalidCredentialsError(AppError):
+    status_code = 401
+    code = "invalid_credentials"
+    message = "Incorrect email or password."
+
+
+class AuthConfigurationError(AppError):
+    status_code = 500
+    code = "auth_misconfigured"
+    message = "Authentication is not configured correctly."
